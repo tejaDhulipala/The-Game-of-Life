@@ -36,20 +36,20 @@ class Boid:
         a = pg.Vector2(0, 0)
         # Have Walls Exert a force on the boid acording to the inverse square law
         k = 1000
-        a += k * pg.Vector2(-1, 0) / ((screen.get_width() - self.x) ** 2 + 1) # Right wall
+        a += k * pg.Vector2(-1, 0) / ((screen.get_width() - self.x) ** 2) # Right wall
         # Left wall
-        a += k * pg.Vector2(1, 0) / ((self.x) ** 2 + 1)
+        a += k * pg.Vector2(1, 0) / ((self.x) ** 2)
         # Bottom Wall
-        a += k * pg.Vector2(0, 1) / ((self.y) ** 2 + 1)
+        a += k * pg.Vector2(0, 1) / ((self.y) ** 2)
         # Top Wall
         a += k * pg.Vector2(0, -1) / ((screen.get_height() - self.y) ** 2)
 
         # Rule 1: Seperation
-        k2 = 40
+        k2 = 2
         for boid in self.boidCommunity:
             if (self.pos - boid.pos).magnitude() < 2 * self.r:
                 unitV = (self.pos - boid.pos).normalize()
-                a += k2 * unitV / ((self.pos.distance_to(boid.pos) - self.r - boid.r) ** 2)
+                a += k2 * unitV / (self.pos.distance_to(boid.pos) - self.r - boid.r) * self.maxV
 
         # Rule 2: Coherence
         d = 0.1 * self.r # distance we want equillibrium between cohesion and seperations
@@ -59,7 +59,7 @@ class Boid:
             for boid in self.boidCommunity:
                 cMass += boid.pos
             cMass /= len(self.boidCommunity)
-            a += (cMass - self.pos).normalize() * k3
+            a += (cMass - self.pos) * k3
 
         # Rule 3: Alignment
         k4 = 1
@@ -69,7 +69,7 @@ class Boid:
                 cVelo += boid.velo
             cVelo /= len(self.boidCommunity)
             if cVelo != self.velo:
-                a += (cVelo - self.velo).normalize() * k4
+                a += (cVelo - self.velo).normalize() * k4 * self.maxV
 
         # Update velo
         print("Accel: " + str(a.magnitude()))
