@@ -1,10 +1,11 @@
 import pygame as pg
 from copy import deepcopy
+from random import choice
 
 class Board:
     def __init__(self, size):
         self.n = size
-        self.board = [[False for i in range(size)] for i in range(size)]
+        self.board = [[choice([True, False]) for i in range(size)] for i in range(size)]
 
     def drawBoard(self, screen: pg.Surface, screenSize: tuple):
         rowNum = 0

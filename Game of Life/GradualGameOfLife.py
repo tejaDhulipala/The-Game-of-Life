@@ -1,5 +1,5 @@
 import pygame as pg
-from Board import Board
+from GradualBoard import Board
 import time
 
 
@@ -10,7 +10,7 @@ def gameOfLife():
     window = pg.display.set_mode(window_size)
     pg.display.set_caption("The Game of Life")
 
-    board = Board(100)
+    board = Board(20)
 
     running = True
     while running:
