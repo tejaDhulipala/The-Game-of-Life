@@ -7,7 +7,7 @@ def gameOfLife():
     pg.init()
 
     window_size = (800, 800)
-    window = pg.display.set_mode(window_size)
+    window = pg.displaygggggggg.set_mode(window_size)
     pg.display.set_caption("The Game of Life")
 
     board = Board(150)

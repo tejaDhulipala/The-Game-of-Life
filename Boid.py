@@ -1,5 +1,5 @@
 import pygame as pg
-from math import cos, sin, sqrt, pi
+from math import cos, sin, sqrt, pi, fabs
 from random import random
 
 BLACK = (0, 0, 0)
@@ -8,7 +8,7 @@ LIGHT_BLUE = (172, 216, 230)
 
 
 class Boid:
-    def __init__(self, x, y, maxV, r, theta=random() * 2 * pi, v=2, relativeCommunity=1000, minV=0.5): # if you delete the init val for theta then every thing goes in a different direction
+    def __init__(self, x, y, maxV, r, theta=0, v=2, relativeCommunity=20, minV=0.5): # if you delete the init val for theta then every thing goes in a different direction
         self.x = x
         self.y = y
         self.pos = pg.Vector2(x, y)
@@ -34,48 +34,66 @@ class Boid:
 
     def updateVelo(self, screen: pg.Surface):
         a = pg.Vector2(0, 0)
+        wallForce = pg.Vector2(0, 0)
         # Have Walls Exert a force on the boid acording to the inverse square law
-        k = 1000
-        a += k * pg.Vector2(-1, 0) / ((screen.get_width() - self.x) ** 2 + 1) # Right wall
+        k = 1
+        # Right wall
+        # wallForce += k * pg.Vector2(-1, 0) / ((screen.get_width() - self.x) ** 2 + 1)
+        wallForce += k * pg.Vector2(-1, 0) if (screen.get_width() - self.x) < 50 else pg.Vector2(0, 0)
         # Left wall
-        a += k * pg.Vector2(1, 0) / ((self.x) ** 2 + 1)
+        # wallForce += k * pg.Vector2(1, 0) / ((self.x) ** 2 + 1)
+        wallForce += k * pg.Vector2(1, 0) if self.x < 50 else pg.Vector2(0, 0)
         # Bottom Wall
-        a += k * pg.Vector2(0, 1) / ((self.y) ** 2 + 1)
+        # wallForce += k * pg.Vector2(0, 1) / ((self.y) ** 2 + 1)
+        wallForce += k * pg.Vector2(0, 1) if self.y < 50 else pg.Vector2(0, 0)
         # Top Wall
-        a += k * pg.Vector2(0, -1) / ((screen.get_height() - self.y) ** 2)
+        # wallForce += k * pg.Vector2(0, -1) / ((screen.get_height() - self.y) ** 2 + 1)
+        wallForce += k * pg.Vector2(0, -1) if (screen.get_height() - self.y) < 50 else pg.Vector2(0, 0)
+        a += wallForce
 
         # Rule 1: Seperation
-        k2 = 40
+        k2 = 100
         for boid in self.boidCommunity:
-            if (self.pos - boid.pos).magnitude() < 2 * self.r:
-                unitV = (self.pos - boid.pos).normalize()
-                a += k2 * unitV / ((self.pos.distance_to(boid.pos) - self.r - boid.r) ** 2)
+                if 2 * self.r > (self.pos - boid.pos).magnitude() > 0:
+                    unitV = (self.pos - boid.pos).normalize()
+                    steering = k2 * unitV / ((self.pos.distance_to(boid.pos) - self.r - boid.r) ** 2)
+                    # steering = steering.normalize()
+                    # steering *= 0.07
+                    steering = Boid.clamp(steering, 0, 1)
+                    a += steering
 
         # Rule 2: Coherence
         d = 0.1 * self.r # distance we want equillibrium between cohesion and seperations
-        k3 = 1 #(d + 1) / (d ** 2 + 1) * k2
+        k3 = 0.05 #(d + 1) / (d ** 2 + 1) * k2
         if len(self.boidCommunity) != 0:
             cMass = pg.Vector2(0, 0)
             for boid in self.boidCommunity:
                 cMass += boid.pos
             cMass /= len(self.boidCommunity)
-            a += (cMass - self.pos).normalize() * k3
+            steering = (cMass - self.pos).normalize() * k3
+            steering = Boid.clamp(steering, 0, 1)
+            a += steering
 
         # Rule 3: Alignment
-        k4 = 1
+        k4 = 0.05
         if len(self.boidCommunity) != 0:
-            cVelo = pg.Vector2(0, 0)
+            desired = pg.Vector2(0, 0)
             for boid in self.boidCommunity:
-                cVelo += boid.velo
-            cVelo /= len(self.boidCommunity)
-            if cVelo != self.velo:
-                a += (cVelo - self.velo).normalize() * k4
+                desired += boid.velo
+            desired /= len(self.boidCommunity)
+            if desired != self.velo:
+                steering = (desired - self.velo).normalize() * k4
+                steering = Boid.clamp(steering, 0, 1)
+                a += steering
 
         # Update velo
-        print("Accel: " + str(a.magnitude()))
-        a = Boid.clamp(a, 0, 0.2)
+        # print("Accel: " + str(a.magnitude()))
+        a = Boid.clamp(a, 0, 0.1)
         self.velo += a
+        self.velo *= 1.005
+
         self.velo = Boid.clamp(self.velo, self.minV, self.maxV)
+        print(self.velo.length())
 
         # Making Variables Consistent
         self.v = self.velo.length()
@@ -88,6 +106,14 @@ class Boid:
                 temp.append(boid)
         self.boidCommunity = temp
 
+    def addPredatorForce(self, screen: pg.Surface):
+        if (pg.mouse.get_pressed()[2]):
+            force = pg.Vector2(self.pos[0] - pg.mouse.get_pos()[0], self.pos[1] - (screen.get_height() - pg.mouse.get_pos()[1]))
+            force = 50 * force.normalize() / (force.magnitude() + 5)
+            self.velo += force
+            pg.draw.circle(screen, (255, 0, 0), pg.mouse.get_pos(), 5)
+
+
     @staticmethod
     def detectCollision(boid1, boid2) -> bool:
         assert type(boid1) == Boid
@@ -99,7 +125,7 @@ class Boid:
     def clamp(val: pg.Vector2, min, max):
         if val.magnitude() < min:
             return val.normalize() * min
-        elif val.magnitude() > max:
+        elif val.magnitude() >= max:
             return val.normalize() * max
         else:
             return val
