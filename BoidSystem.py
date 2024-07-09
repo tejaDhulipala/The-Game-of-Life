@@ -18,12 +18,13 @@ class BoidSystem:
     def updateBoidsV(self, screen: pg.Surface):
          for boid in self.boids:
             boid.updateVelo(screen)
+            boid.addPredatorForce(screen)
 
     def drawBoids(self, screen: pg.Surface):
         for boid in self.boids:
             boid.draw(screen)
 
-    def checkForClick(self, screen: pg.Surface, maxV=5, r=10, v_init=2, minV=2):
+    def checkForClick(self, screen: pg.Surface, maxV=4, r=7.5, v_init=2, minV=3.5):
         if pg.mouse.get_pressed()[0]:
             x, y = pg.mouse.get_pos()
             y = screen.get_height() - y

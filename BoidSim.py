@@ -7,7 +7,7 @@ from BoidSystem import BoidSystem
 def boidSim():
     pg.init()
 
-    window_size = (1200, 700)
+    window_size = (1400, 700)
     window = pg.display.set_mode(window_size)
     pg.display.set_caption("Boid Sim")
     font = pg.font.Font('freesansbold.ttf', 20)
@@ -41,7 +41,7 @@ def boidSim():
         textRect.center = (40, 32)
         window.blit(text1, textRect)
 
-        text1 = font.render("Wall Avoidance " + str(fr), True, (0, 255, 0))
+        text1 = font.render("Wall Avoidance ", True, (0, 255, 0))
         textRect = text1.get_rect()
         textRect.center = (150, 32)
         window.blit(text1, textRect)
