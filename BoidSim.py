@@ -7,7 +7,7 @@ from BoidSystem import BoidSystem
 def boidSim():
     pg.init()
 
-    window_size = (1400, 700)
+    window_size = (int(input("Screen Width: ")), int(input("Screen Height: ")))
     window = pg.display.set_mode(window_size)
     pg.display.set_caption("Boid Sim")
     font = pg.font.Font('freesansbold.ttf', 20)
